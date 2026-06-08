@@ -98,6 +98,21 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Business Requirements *(mandatory)*
+
+- **BR-001**: [Business outcome this feature must deliver]
+- **BR-002**: [Operational problem this feature resolves]
+
+### Dependencies *(mandatory)*
+
+- **DEP-001**: [Internal or external dependency and owning team/system]
+- **DEP-002**: [Integration dependency, if any, including GIS/ADMS boundary statement]
+
+### Constraints *(mandatory)*
+
+- **CON-001**: [Scope, compliance, or operational constraint]
+- **CON-002**: [Performance, availability, or data handling constraint]
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
@@ -129,3 +144,13 @@
 - [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
 - [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
 - [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+
+## Delivery Layer Mapping *(mandatory)*
+
+Document each major item with an explicit layer label so reviewers can separate intent,
+design, build work, and verification:
+
+- **Business Requirement**: [What outcome the business needs]
+- **Technical Design**: [How the system will satisfy the requirement]
+- **Implementation Task**: [What build/change activity is required]
+- **Test Consideration**: [How non-regression and integrity will be verified]

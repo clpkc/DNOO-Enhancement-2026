@@ -40,7 +40,16 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Scope gate: Work is GIS enhancement scope only; any ADMS element is documented only as
+  an external dependency.
+- Clarity gate: Business requirements, assumptions, dependencies, and constraints are
+  explicitly documented in the spec and unresolved items are tracked.
+- Data integrity gate: Integrity controls and failure handling are defined for all
+  affected GIS data paths.
+- Regression gate: Existing GIS integrations, workflows, and operational usage have
+  explicit non-regression verification activities.
+- Layering gate: Requirement, design, implementation, and test considerations are
+  explicitly separated in this plan and referenced artifacts.
 
 ## Project Structure
 

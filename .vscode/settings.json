@@ -1,0 +1,6 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "gem": true,
+        "pip": true
+    }
+}

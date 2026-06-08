@@ -23,88 +23,90 @@
   - Demonstrated to users independently
 -->
 
-### User Story 1 - Split Electric Line With Automatic Length Redistribution (Priority: P1)
+### User Story 1 - Split Electric Line With Automatic User Length Redistribution (Priority: P1)
 
 As a GIS editor, I split an electric line at a chosen point and the system
-automatically recalculates User Length and Segment Length for the child features in
-proportion to the parent line.
+automatically recalculates LENGTHUSER for the child features in proportion to the
+geometry split.
 
 **Why this priority**: This is the core business outcome and directly removes manual
-recalculation effort from the current split workflow.
+LENGTHUSER recalculation from the split workflow.
 
-**Independent Test**: Select a parent electric line with known User Length and Segment
-Length, split it into two child features, and verify that both child values are updated
-proportionally based on the split ratio.
+**Independent Test**: Select a parent ElectricLine with a known LENGTHUSER value,
+split it into two child features, and verify that both child LENGTHUSER values are
+updated proportionally based on the geometry split ratio.
 
 **Acceptance Scenarios**:
 
-1. **Given** a parent electric line with User Length 100 and Segment Length 120,
-  **When** the user splits the line into two equal child lines, **Then** each child
-  receives User Length 50 and Segment Length 60.
-2. **Given** a parent electric line with stored length attributes, **When** the user
-  splits it at a non-equal point, **Then** the child features inherit User Length and
-  Segment Length values in the same proportion as their resulting line lengths.
+1. **Given** a parent ElectricLine where LENGTHUSER = 100, **When** the user splits the
+   line so that the geometry splits in a 1:1 ratio, **Then** each child receives
+   LENGTHUSER = 50.
+2. **Given** a parent ElectricLine where LENGTHUSER = 100, **When** the user splits the
+   line so that the geometry splits in a 2:3 ratio, **Then** one child receives
+   LENGTHUSER = 40 and the other receives LENGTHUSER = 60.
 
 ---
 
-### User Story 2 - Support Optional User Length Input During Split (Priority: P2)
+### User Story 2 - Dialog Pre-Populates User Length and Accepts Override (Priority: P2)
 
-As a GIS editor, I can optionally input User Length when performing the split and have
-the child features recalculate from that parent value instead of requiring manual child
-entry.
+As a GIS editor, when I open the split task dialog, the User Length field is
+pre-populated with the line's stored LENGTHUSER (if > 0) or Shape_Length (as fallback),
+and I can edit it before confirming the split.
 
-**Why this priority**: This preserves the existing task pattern while ensuring the new
-automation still works for lines where the parent User Length is entered at split time.
+**Why this priority**: This preserves editor control over the parent length value while
+ensuring automation works for lines regardless of whether LENGTHUSER is already stored.
 
-**Independent Test**: Start a split on a line where the user provides a parent User
-Length value during the task and verify the child attributes are calculated from that
-value.
+**Independent Test**: Start the split task on (a) a line where LENGTHUSER > 0 and
+(b) a line where LENGTHUSER = 0 or null. Verify pre-population source and that an
+edited value is used for child redistribution.
 
 **Acceptance Scenarios**:
 
-1. **Given** a line selected for split and no stored User Length is available,
-   **When** the user enters a parent User Length in the task, **Then** the child
-   features are assigned recalculated User Length values based on the parent length
-   ratio.
+1. **Given** an ElectricLine where LENGTHUSER = 80, **When** the editor opens the task
+   dialog, **Then** the User Length field is pre-populated with 80.
+2. **Given** an ElectricLine where LENGTHUSER = 0 or null, **When** the editor opens
+   the task dialog, **Then** the User Length field is pre-populated with Shape_Length.
+3. **Given** a pre-populated User Length of 80, **When** the editor overrides it with
+   100 and then selects the split point, **Then** child LENGTHUSER values are
+   redistributed based on 100, not 80.
 
 ---
 
-### User Story 3 - Preserve Existing GIS Editing Workflow (Priority: P3)
+### User Story 3 - Task Is Executable Only in an Active Edit Session (Priority: P3)
 
-As a GIS operations lead, I need the electric line splitting tool to fit the existing
-GIS editing workflow without introducing regression to line editing outcomes.
+As a GIS operations lead, I need the electric line split task to enforce that it runs
+only when GIS editing is active, and that it leaves unrelated GIS editing behavior
+unchanged.
 
-**Why this priority**: The enhancement is only valuable if it improves efficiency
-without disrupting current GIS editing operations.
+**Why this priority**: Scope and edit-session gating prevent data integrity failures and
+user confusion outside a valid edit context.
 
-**Independent Test**: Execute the existing split-line editing workflow with and without
-optional User Length input and verify the workflow remains usable while length values
-are updated automatically.
+**Independent Test**: Attempt the split task outside an edit session and verify it
+cannot be executed; then run it within an edit session and verify unrelated GIS editing
+behavior is unaffected.
 
 **Acceptance Scenarios**:
 
-1. **Given** an editor uses the existing split-line task flow, **When** the split is
-  completed, **Then** the edit succeeds without requiring manual child length entry and
-  without changing unrelated GIS editing behavior.
+1. **Given** no active edit session, **When** the user attempts to invoke the split
+   task, **Then** the task does not execute and the user receives an appropriate
+   message.
+2. **Given** an active edit session, **When** the editor completes the split, **Then**
+   the edit succeeds without changing unrelated GIS editing behavior.
 
 ---
 
 ### Edge Cases
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
-
-- The parent line has User Length but no Segment Length.
-- The parent line has Segment Length but no stored User Length and the user does not
-  provide one during the task.
+- LENGTHUSER = 0 or null on the parent line: the task falls back to Shape_Length for
+  pre-population; child LENGTHUSER values are redistributed from that fallback value.
+- The editor overrides the pre-populated User Length with a value greater or less than
+  the geometry-derived length: child redistribution must use the editor-supplied value.
 - The split creates child lengths that result in decimal ratios and rounding is needed.
-- The selected line is too short or the split point is too close to an endpoint.
-- The parent line has zero or null length attributes.
-- Open question: If merged circuit behavior is still required, should it be handled as a
-  separate GIS enhancement item because the stated business requirement describes
-  split-line behavior only?
+- The selected split point is at or very close to an existing endpoint: the task must
+  handle degenerate splits without producing zero-length child features silently.
+- The parent ElectricLine belongs to an AssetGroup or AssetType combination not
+  previously tested: the task applies to all AssetGroups and AssetTypes for the
+  ElectricLine feature class.
 
 ## Requirements *(mandatory)*
 
@@ -115,97 +117,118 @@ are updated automatically.
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow the user to select an electric line feature and split it
-  at a chosen point within the existing Split Line ArcFM task.
-- **FR-002**: System MUST support optional parent User Length input during the split
-  task.
-- **FR-003**: System MUST calculate User Length for each child feature according to the
-  child line length ratio compared with the parent line.
-- **FR-004**: System MUST update Segment Length for each child feature according to the
-  same proportional ratio used for the split.
-- **FR-005**: System MUST preserve the total parent User Length and total parent Segment
-  Length across the created child features, subject to approved rounding rules.
+- **FR-001**: System MUST provide a new ArcFM task under the Line folder in the Tasks
+  Pane that allows the user to select an ElectricLine feature and split it at a chosen
+  point.
+- **FR-002**: The task dialog MUST display the selected line's Electric Line ID
+  (populated from GlobalId) and a User Length field.
+- **FR-003**: The User Length field MUST be pre-populated as follows: if LENGTHUSER > 0
+  then use LENGTHUSER; otherwise use Shape_Length. The field MUST remain editable.
+- **FR-004**: System MUST derive the split ratio from the geometry of the selected split
+  point; the user MUST NOT be required to input the ratio.
+- **FR-005**: System MUST calculate LENGTHUSER for each child ElectricLine feature
+  according to the split ratio applied to the parent User Length (whether stored or
+  editor-supplied).
 - **FR-006**: System MUST complete the split without requiring manual entry of child
-  User Length or child Segment Length values.
+  LENGTHUSER values.
 - **FR-007**: System MUST leave unrelated GIS editing behavior unchanged.
-- **FR-008**: System MUST use geometry length to determine the split ratio and then
-  apply that ratio to recalculate User Length and Segment Length for the child
-  features.
-- **FR-009**: System MUST round child User Length and child Segment Length values to 2
-  decimal places and assign any rounding residual to the longer child feature so that
-  the child totals match the parent total.
+- **FR-008**: System MUST round child LENGTHUSER values to 2 decimal places and assign
+  any rounding residual to the longer child feature so that child totals match the
+  parent total.
+- **FR-009**: The task MUST only be executable within an active GIS edit session.
+- **FR-010**: The task MUST apply to the ElectricLine feature class across all
+  AssetGroups and AssetTypes.
 
 ### Business Requirements *(mandatory)*
 
-- **BR-001**: Address the need for automatic Segment Length updates without manual input
-  when an electric line is split.
-- **BR-002**: Reduce manual effort and data-entry risk in the Split Line ArcFM task.
-- **BR-003**: Keep the business wording and user behavior aligned to the existing split
-  line requirement.
+- **BR-001**: Address the need for automatic LENGTHUSER redistribution without manual
+  child entry when an ElectricLine is split.
+- **BR-002**: Reduce manual effort and data-entry risk in the split-line task.
+- **BR-003**: Segment Length (onsite installed length) remains a manual user input and
+  is not in scope for automatic redistribution.
 
 ### Business Problem *(mandatory)*
 
-When electric lines are split, child Segment Length values currently require manual
+When ElectricLine features are split, child LENGTHUSER values currently require manual
 input or correction, which creates extra effort and increases the chance of incorrect
 GIS attribute values.
 
 ### Current Pain Point *(mandatory)*
 
-Users must manually determine or correct child length-related values after a split,
-especially where Segment Length must be redistributed from the parent line. This slows
-editing work and can introduce inconsistent data.
+Users must manually determine or correct child LENGTHUSER values after a split.
+This slows editing work and can introduce inconsistent GIS data. Segment Length
+(onsite installed length) remains a separate manual field and is not affected by this
+enhancement.
 
 ### Target Users *(mandatory)*
 
-- GIS editors performing line split operations in ArcFM.
+- GIS editors performing ElectricLine split operations in ArcGIS Pro (ArcFM task).
 - GIS operations staff responsible for reviewing edit outcomes and data quality.
 
 ### Desired Future Behaviour *(mandatory)*
 
-The Split Line ArcFM task recalculates child User Length and child Segment Length
-automatically from the parent line and split ratio, so the user completes the split
-without manually entering child values.
+A new ArcFM task (under the Line folder in the Tasks Pane) presents the editor with the
+ElectricLine's GlobalId and a pre-populated, editable User Length value. After the
+editor selects the split point, the task splits the parent line into two child
+ElectricLine features and automatically assigns child LENGTHUSER values in proportion
+to the geometry split. No manual child LENGTHUSER entry is required. Segment Length
+(onsite installed length) continues to be entered manually by business users.
 
 ### In Scope *(mandatory)*
 
-- Electric line split behavior in the existing Split Line ArcFM task.
-- Proportional redistribution of User Length and Segment Length from parent to child
-  features.
-- Optional parent User Length entry when performing the split.
-- GIS workflow outcomes only.
+- A new ArcFM task for splitting ElectricLine features, accessible under the Line
+  folder in the Tasks Pane.
+- Proportional redistribution of LENGTHUSER from parent to child ElectricLine features.
+- Dialog display of Electric Line ID (GlobalId) and editable User Length field with
+  pre-population logic (LENGTHUSER > 0 → LENGTHUSER; else → Shape_Length).
+- System-derived split ratio from the chosen geometry split point.
+- Applies to the ElectricLine feature class across all AssetGroups and AssetTypes.
+- GIS workflow outcomes only; task executable within active edit sessions only.
 
 ### Out of Scope *(mandatory)*
 
+- Automatic redistribution or calculation of Segment Length (onsite installed length);
+  this field remains manually entered by business users.
 - ADMS workflow, design, or implementation changes.
-- Broader electric circuit merge automation unless explicitly approved as a separate GIS
-  item.
+- Electric circuit merge automation.
 - Changes to unrelated GIS editing tools.
+- Any feature class other than ElectricLine.
 
 ### Dependencies *(mandatory)*
 
-- **DEP-001**: Existing Split Line ArcFM task behavior and GIS editing environment.
-- **DEP-002**: Availability of parent line User Length and Segment Length attributes in
-  the GIS data model or task input.
-- **DEP-003**: Existing GIS data rules for electric line feature editing.
-- **DEP-004**: Any ADMS reference remains dependency-only and must not alter ADMS scope.
+- **DEP-001**: ArcGIS Pro ArcFM task framework and the Line folder location in the
+  Tasks Pane.
+- **DEP-002**: Availability of LENGTHUSER and Shape_Length attributes on the
+  ElectricLine feature class in the GIS data model.
+- **DEP-003**: An active GIS edit session; the task cannot run outside one.
+- **DEP-004**: Any ADMS reference remains dependency-only and must not alter ADMS
+  scope.
 
 ### Constraints *(mandatory)*
 
-- **CON-001**: Scope is GIS only.
-- **CON-002**: Wording must remain aligned with the existing business requirement for
-  split-line behavior.
-- **CON-003**: The enhancement must not create regression in the current GIS split-line
-  editing workflow.
-- **CON-004**: No ADMS scope may be introduced unless explicitly stated as a dependency.
+- **CON-001**: Scope is GIS only; applies to ElectricLine feature class only.
+- **CON-002**: Segment Length (onsite installed length) is not automatically
+  redistributed; it remains a manual business-user input.
+- **CON-003**: GIS captures only 2-dimensional circuit length; LENGTHUSER and
+  Shape_Length reflect 2D geometry.
+- **CON-004**: The task must only execute within an active GIS edit session.
+- **CON-005**: The enhancement must not create regression in existing GIS editing
+  behavior.
+- **CON-006**: No ADMS scope may be introduced unless explicitly stated as a
+  dependency.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Parent Electric Line**: The original line feature selected for splitting, including
-  its existing User Length and Segment Length values.
-- **Child Electric Line**: Each resulting line feature created by the split, with
-  recalculated User Length and Segment Length values.
-- **Split Ratio**: The proportional relationship between each child line length and the
-  parent line length used to redistribute attribute values.
+- **Parent ElectricLine**: The original ElectricLine feature selected for splitting,
+  including its LENGTHUSER (if > 0) or Shape_Length (fallback) and GlobalId.
+- **Child ElectricLine**: Each resulting ElectricLine feature created by the split,
+  with LENGTHUSER recalculated proportionally from the parent.
+- **Split Ratio**: The proportional relationship between each child line's geometry
+  length and the parent line's geometry length, derived from the chosen split point.
+- **LENGTHUSER**: GIS-stored user-facing length attribute on ElectricLine; subject to
+  automatic redistribution by this task.
+- **Shape_Length**: GIS geometry-derived length used as fallback when LENGTHUSER = 0
+  or null.
 
 ## Success Criteria *(mandatory)*
 
@@ -216,40 +239,48 @@ without manually entering child values.
 
 ### Measurable Outcomes
 
-- **SC-001**: Users can complete a standard electric line split without manual child
-  User Length or Segment Length entry in 95% of tested cases.
-- **SC-002**: In 100% of tested split cases, the total of child User Length values
-  equals the parent User Length, subject to the approved rounding rule.
-- **SC-003**: In 100% of tested split cases, the total of child Segment Length values
-  equals the parent Segment Length, subject to the approved rounding rule.
-- **SC-004**: Manual post-split correction effort for length-related attributes is
-  reduced by at least 80% in tested split scenarios compared with the current workflow.
+- **SC-001**: Users can complete a standard ElectricLine split without manual child
+  LENGTHUSER entry in 95% of tested cases.
+- **SC-002**: In 100% of tested split cases, the total of child LENGTHUSER values
+  equals the parent LENGTHUSER (or the editor-supplied value), subject to the approved
+  rounding rule.
+- **SC-003**: In 100% of tested cases where LENGTHUSER = 0 or null, child LENGTHUSER
+  values are correctly redistributed from Shape_Length.
+- **SC-004**: Manual post-split correction effort for LENGTHUSER is reduced by at least
+  80% in tested scenarios compared with the current workflow.
+- **SC-005**: The task cannot be invoked outside an active edit session.
 
 ## Assumptions
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
-
-- The existing Split Line ArcFM task remains the user entry point for this enhancement.
-- Parent electric lines already contain, or can accept, the required length-related
-  attributes used for redistribution.
-- The enhancement applies to split behavior only unless merge behavior is separately
-  approved.
+- The new ArcFM task is the user entry point; it does not reuse or replace an existing
+  split tool. The implementation calls an out-of-the-box split-at-point function
+  internally.
+- GIS captures only 2-dimensional circuit length; LENGTHUSER and Shape_Length are
+  both 2D values.
+- Segment Length (onsite installed length) is a separate field that business users
+  continue to input manually; it is not in scope for automatic redistribution.
+- The enhancement applies to the ElectricLine feature class across all AssetGroups
+  and AssetTypes.
 - Existing user access and GIS editing permissions remain unchanged.
+- The task applies to split behavior only; merge behavior is out of scope.
 
 ## Delivery Layer Mapping *(mandatory)*
 
 Document each major item with an explicit layer label so reviewers can separate intent,
 design, build work, and verification:
 
-- **Business Requirement**: When an electric line is split, child User Length and child
-  Segment Length must update automatically without manual child input.
-- **Technical Design**: Use the parent line values and the resulting split ratio to
-  redistribute User Length and Segment Length to child features.
-- **Implementation Task**: Update the split-line behavior so length-related child values
-  are calculated and applied during the existing ArcFM task flow.
-- **Test Consideration**: Verify equal and non-equal splits, optional parent User Length
-  entry, rounding outcomes, and non-regression of the current GIS editing workflow.
+- **Business Requirement**: When an ElectricLine is split, child LENGTHUSER values must
+  update automatically from the geometry split ratio; Segment Length remains a manual
+  user input.
+- **Technical Design**: A new ArcFM task under the Line folder in the Tasks Pane
+  presents the GlobalId and a pre-populated, editable User Length field (LENGTHUSER > 0
+  → LENGTHUSER; else → Shape_Length). After the editor selects the split point, the
+  task derives the ratio from geometry and applies it to LENGTHUSER for each child.
+- **Implementation Task**: Build the new split task, wire the dialog fields, implement
+  the LENGTHUSER pre-population logic, compute the geometry-based split ratio, and
+  apply child LENGTHUSER values. Applies to ElectricLine feature class, all
+  AssetGroups and AssetTypes. Task must only execute within an active edit session.
+- **Test Consideration**: Verify equal and non-equal geometry splits, LENGTHUSER > 0
+  pre-population, Shape_Length fallback when LENGTHUSER = 0 or null, editor-supplied
+  override, rounding outcomes (2dp, residual to longer child), all AssetGroups and
+  AssetTypes, and non-regression of existing GIS editing behavior.

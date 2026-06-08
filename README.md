@@ -3,6 +3,12 @@
 ## Scope
 This repository is only for GIS-related enhancement work under DNOO Enhancement 2026.
 
+## Repository Structure
+- Reference and discovery inputs are stored under `docs/discovery/`.
+- Design documents by enhancement item are stored under `docs/discovery/design-docs/`.
+- SpecKit-generated artifacts and workflow state remain under `.specify/`.
+- Automation and prompt configuration remain under `.github/`.
+
 ## Out of scope
 - ADMS-only enhancement items
 - Non-GIS workstreams

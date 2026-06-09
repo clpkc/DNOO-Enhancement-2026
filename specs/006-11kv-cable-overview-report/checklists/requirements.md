@@ -32,4 +32,8 @@
 ## Notes
 
 - All checklist items pass for this specification.
-- Output file format for government submission is captured as a non-blocking open question.
+- Updated 2026-06-09 from design extract: scope narrowed to in-service cable only; CSV
+  format confirmed; joint commissioning data added; OHL exclusion explicit; trace logic
+  (SOM_SS + SOM_CCT + Substation containment) documented; closed ring circuit constraint
+  added; month-end deadline added; Batch 2 / Pre-Design status and Detailed Design gate
+  documented.

@@ -32,3 +32,9 @@
 ## Notes
 
 - All checklist items pass after resolving the split ratio source and rounding behavior.
+- Checklist review 2026-06-09: removed stale ACTION REQUIRED comment blocks from
+  Requirements and Success Criteria sections; added Clarifications section (Session
+  2026-06-09) capturing design-extract confirmations (GlobalId, editable field,
+  system-derived ratio, degenerate split); added EH-001 (zero-length child prevention)
+  and EH-002 (outside-edit-session guard) to new Error Handling Expectations section;
+  spec verified consistent with design-extract and constitution (all 8 principles pass).

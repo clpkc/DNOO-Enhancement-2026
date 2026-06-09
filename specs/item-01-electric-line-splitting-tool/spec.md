@@ -8,6 +8,15 @@
 
 **Input**: User description: "Create a specification for one DNOO GIS enhancement item only. Requirement ID: 01 - Electric line splitting tool. Business requirement: The Split Line ArcFM task allows users to select a line feature, optionally input User Length, and split it at a chosen point. It automatically calculates User Length for child features based on the parent’s length ratio. Segment length is also updated proportionally. Example: parent line A = 100; split into B = 50 and C = 50; if segment length = 120, each child becomes 60. Business purpose: Address the need for automatic segment length updates without manual input for split or merged circuits. Please produce: business problem, current pain point, target users, desired future behaviour, in-scope / out-of-scope, assumptions, dependencies, constraints, acceptance criteria, edge cases / open questions. Scope notes: GIS only. Do not introduce ADMS scope unless it is an explicitly stated dependency. Keep the wording aligned with the existing business requirement above."
 
+## Clarifications
+
+### Session 2026-06-09
+
+- Q: Does the dialog show GlobalId or a separate Electric Line ID? → A: Electric Line ID is populated from the selected line's GlobalId.
+- Q: Is the User Length field editable after pre-population? → A: Yes — the field is explicitly editable; an editor-supplied override takes precedence for child redistribution.
+- Q: Does the user input the split ratio? → A: No — the system derives the ratio from the actual geometry split point; user does not input it.
+- Q: What happens at the degenerate split edge case? → A: The task must prevent or handle splits that would produce a zero-length child (split point at or near an existing endpoint); the task must not silently create zero-length features.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -109,11 +118,6 @@ behavior is unaffected.
   ElectricLine feature class.
 
 ## Requirements *(mandatory)*
-
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
 
 ### Functional Requirements
 
@@ -217,6 +221,15 @@ to the geometry split. No manual child LENGTHUSER entry is required. Segment Len
 - **CON-006**: No ADMS scope may be introduced unless explicitly stated as a
   dependency.
 
+### Error Handling Expectations
+
+- **EH-001**: If the selected split point is at or very close to an existing endpoint
+  such that a zero-length child would result, the task MUST prevent the split and present
+  a clear message to the user. Zero-length child ElectricLine features MUST NOT be
+  silently created.
+- **EH-002**: If the task is invoked outside an active edit session, it MUST not execute
+  and MUST present a clear message to the user (covered by FR-009 and CON-004).
+
 ### Key Entities *(include if feature involves data)*
 
 - **Parent ElectricLine**: The original ElectricLine feature selected for splitting,
@@ -231,11 +244,6 @@ to the geometry split. No manual child LENGTHUSER entry is required. Segment Len
   or null.
 
 ## Success Criteria *(mandatory)*
-
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
 
 ### Measurable Outcomes
 

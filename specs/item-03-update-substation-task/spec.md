@@ -101,7 +101,7 @@ only valid records are persisted for downstream consumption.
 
 1. **Given** a record updated through the task, **When** downstream data is reviewed,
    **Then** saved SSNAME and SSNUM values always match the approved pairing from
-   SAP_SUBSTATION_TABLE.
+   SAP_SUBSTATION_DATA.
 
 ---
 
@@ -244,6 +244,18 @@ where not already present.
 - **VR-007**: When reference validation cannot be completed (e.g., SAP_SUBSTATION_DATA
   unavailable), the update MUST fail safe rather than saving an unverified pairing.
 
+### Error Handling Expectations
+
+- **EH-001**: When SAP_SUBSTATION_DATA is temporarily unavailable, the task MUST fail
+  safe — the update MUST NOT be committed and the user MUST receive a clear message
+  indicating validation could not be completed (aligns with VR-007).
+- **EH-002**: When the user opens the task for an unsupported asset type (HV Switch with
+  `PLACEMENT` ≠ Pole-Mounted or any other unsupported class), the task MUST not proceed
+  and MUST present a clear message to the user (aligns with FR-010).
+- **EH-003**: When all available dropdown values are marked IS_USED = true, the task
+  MUST present an empty dropdown with a clear message that no eligible substation values
+  are available.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Supported GIS Asset**: A Substation, HV PM TX Transformer
@@ -269,7 +281,7 @@ where not already present.
 - **SC-002**: In 100% of tested invalid pairing cases, the update is rejected before
   save.
 - **SC-003**: In 100% of tested saved records updated through this task, SSNAME and
-  SSNUM match a valid pairing from SAP_SUBSTATION_TABLE.
+  SSNUM match a valid pairing from SAP_SUBSTATION_DATA.
 - **SC-004**: In 100% of tested cases, dropdown values marked IS_USED = true in
   SAP_SUBSTATION_DATA are not presented as selectable options.
 - **SC-005**: In 100% of tested saves, SSNAME values are stored with the "S/S" suffix

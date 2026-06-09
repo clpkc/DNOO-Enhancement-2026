@@ -38,3 +38,8 @@
   SSNAME "S/S" suffix rule added (VR-004); staging import dependency documented
   (DEP-001, DEP-004, DEP-005); open question on dropdown display resolved by auto-fill
   behavior from design extract; SC-004 and SC-005 added for IS_USED and suffix coverage.
+- Checklist review 2026-06-09: corrected 2 stale SAP_SUBSTATION_TABLE references to
+  SAP_SUBSTATION_DATA in User Story 3 acceptance scenario and SC-003; added Error
+  Handling Expectations section with EH-001 (fail-safe on unavailability), EH-002
+  (unsupported asset type guard), and EH-003 (empty dropdown when all IS_USED); spec
+  verified consistent with design-extract and constitution (all 8 principles pass).

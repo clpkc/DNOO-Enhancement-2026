@@ -32,4 +32,8 @@
 ## Notes
 
 - All checklist items pass for this specification.
-- The default History lookback-window decision is captured as a non-blocking open question.
+- Updated 2026-06-09 from design extract: add-in terminology (not tab); authenticated
+  user scope for GDBM sessions; date range filter resolves lookback open question; search
+  (partial, dynamic) added; Error Message conditionally shown/hidden; activity detail
+  panel (lower right) added; status definitions explicit; duplicate placeholder sections
+  and ACTION REQUIRED comments removed.

@@ -32,4 +32,10 @@
 ## Notes
 
 - All checklist items pass for this specification.
-- The open question about batch-created Electric Line features is documented as a non-blocking scope note rather than a planning blocker.
+- Updated 2026-06-09 from design extract: trigger condition sharpened — rule fires only
+  when LENGTHUSER is null or ≤ 0 (not unconditionally); user-supplied LENGTHUSER > 0 at
+  creation is preserved (FR-002, SC-002 added); asset scope confirmed all Asset Groups /
+  all Asset Types (FR-006); batch/import creation resolved as in-scope via attribute rule
+  (FR-007); open question on batch creation resolved; ACTION REQUIRED placeholders
+  removed from Edge Cases and Assumptions; Delivery Layer Mapping updated for conditional
+  logic.

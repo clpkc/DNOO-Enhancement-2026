@@ -8,6 +8,14 @@
 
 **Input**: User description: "Create a specification for one DNOO GIS enhancement item only. Requirement ID: 02 - User length alignment tool. Business requirement: A new attribute rule on Electric Line sets User Length (LENGTHUSER) default value equal to the system-calculated shape length (SHAPE_Length) when a new feature is created. Users can still update the value afterward. Business purpose: Oracle WACS adopts user length and this attribute cannot be NULL. Please produce: business problem, current pain point, target users, desired future behaviour, in-scope / out-of-scope, assumptions, dependencies, constraints, acceptance criteria, edge cases / open questions. Scope notes: GIS only. Do not introduce ADMS scope unless it is an explicitly stated dependency. Keep the wording aligned with the business requirement above."
 
+## Clarifications
+
+### Session 2026-06-09
+
+- Q: When exactly does the rule fire? → A: Only when LENGTHUSER is null or ≤ 0 at creation time; if the user supplies a valid value (> 0), the rule does not overwrite it.
+- Q: What is the asset scope? → A: ElectricLine feature class, all Asset Groups, all Asset Types.
+- Q: Does the rule apply to batch/import creation paths? → A: Yes — the attribute rule fires on all ElectricLine creation events regardless of method.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -23,25 +31,30 @@
   - Demonstrated to users independently
 -->
 
-### User Story 1 - Default User Length On Create (Priority: P1)
+### User Story 1 - Default User Length On Create When Not Already Set (Priority: P1)
 
-As a GIS editor, when I create a new Electric Line feature, the User Length value is
-defaulted to the system-calculated shape length so that the attribute is populated
-without manual entry.
+As a GIS editor, when I create a new Electric Line feature without supplying a User
+Length value (or with a zero/negative value), the User Length is automatically defaulted
+to the system-calculated shape length so the attribute is populated without manual entry.
 
 **Why this priority**: This is the core business requirement and directly addresses the
 need for a non-null User Length value on creation.
 
-**Independent Test**: Create a new Electric Line feature and verify that User Length is
-automatically set to the same value as the system-calculated shape length at the time of
-creation.
+**Independent Test**: Create a new Electric Line feature without entering a User Length
+value and verify that LENGTHUSER is automatically set to SHAPE_Length at save. Also
+create a feature with LENGTHUSER explicitly set to a value > 0 and verify the
+user-supplied value is preserved without being overwritten.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user creates a new Electric Line feature, **When** the feature is saved,
-  **Then** LENGTHUSER is defaulted to SHAPE_Length.
-2. **Given** a new Electric Line feature is created, **When** no manual User Length is
-  entered, **Then** the record is still saved with a non-null LENGTHUSER value.
+1. **Given** a user creates a new Electric Line feature with no LENGTHUSER supplied,
+   **When** the feature is saved, **Then** LENGTHUSER is defaulted to SHAPE_Length.
+2. **Given** a new Electric Line feature is created with LENGTHUSER = 0 or null,
+   **When** the feature is saved, **Then** the record is saved with a non-null
+   LENGTHUSER equal to SHAPE_Length.
+3. **Given** a new Electric Line feature is created with a user-supplied LENGTHUSER > 0,
+   **When** the feature is saved, **Then** the user-supplied LENGTHUSER value is
+   preserved and the rule does not overwrite it.
 
 ---
 
@@ -85,19 +98,19 @@ verify that the resulting records always contain a non-null User Length value.
 
 ### Edge Cases
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
-
-- The created Electric Line has a zero shape length.
+- The created Electric Line has a zero or negative shape length — LENGTHUSER would be
+  defaulted to the same value; downstream NULL prevention is satisfied but zero-length
+  records should be validated separately.
 - The created Electric Line geometry is invalid or cannot calculate shape length at save
-  time.
-- A user supplies a User Length value during creation and expects it to remain unchanged.
-- An existing Electric Line record is edited after creation.
-- Bulk creation or import creates multiple Electric Line features in one operation.
-- Open question: Should the defaulting rule apply only to interactive creation, or also
-  to batch-created Electric Line features that use the same creation path?
+  time — behavior when SHAPE_Length is unavailable must be defined.
+- A user supplies a LENGTHUSER value > 0 during creation — the rule MUST NOT overwrite
+  it; the user-supplied value is preserved.
+- A user supplies a LENGTHUSER value of 0 or null during creation — the rule fires and
+  defaults to SHAPE_Length.
+- An existing Electric Line record is edited after creation — the rule does not apply;
+  LENGTHUSER retains its current value.
+- Bulk creation or import creates multiple Electric Line features in one operation — the
+  attribute rule fires for each created feature regardless of creation method.
 
 ## Requirements *(mandatory)*
 
@@ -108,17 +121,22 @@ verify that the resulting records always contain a non-null User Length value.
 
 ### Functional Requirements
 
-- **FR-001**: System MUST set User Length (LENGTHUSER) to the system-calculated shape
-  length (SHAPE_Length) when a new Electric Line feature is created.
-- **FR-002**: System MUST ensure LENGTHUSER is not null after creation of a new Electric
-  Line feature through the supported GIS creation workflow.
-- **FR-003**: System MUST allow users to update LENGTHUSER after the feature has been
+- **FR-001**: When a new ElectricLine feature is created, if LENGTHUSER is null or ≤ 0,
+  the system MUST automatically set LENGTHUSER to SHAPE_Length.
+- **FR-002**: When a new ElectricLine feature is created with a user-supplied LENGTHUSER
+  value > 0, the system MUST preserve that value and MUST NOT overwrite it.
+- **FR-003**: System MUST ensure LENGTHUSER is not null after creation of any new
+  ElectricLine feature through any creation method.
+- **FR-004**: System MUST allow users to update LENGTHUSER after the feature has been
   created.
-- **FR-004**: System MUST NOT overwrite a user-updated LENGTHUSER value during later
-  edits unless the feature is being created anew.
-- **FR-005**: System MUST apply the defaulting behavior only to Electric Line features.
-- **FR-006**: System MUST keep unrelated GIS editing behavior unchanged.
-- **FR-007**: System MUST support downstream GIS data usage where Oracle WACS adopts
+- **FR-005**: System MUST NOT apply the defaulting rule during edits to existing
+  ElectricLine features.
+- **FR-006**: System MUST apply the defaulting behavior to ElectricLine, all Asset
+  Groups, all Asset Types.
+- **FR-007**: System MUST apply the rule consistently regardless of creation method
+  (interactive, batch, or import).
+- **FR-008**: System MUST keep unrelated GIS editing behavior unchanged.
+- **FR-009**: System MUST support downstream GIS data usage where Oracle WACS adopts
   user length, while keeping Oracle WACS as a dependency context rather than added scope.
 
 ### Business Problem *(mandatory)*
@@ -139,15 +157,20 @@ creates extra effort and risks incomplete GIS data reaching downstream use.
 
 ### Desired Future Behaviour *(mandatory)*
 
-When a new Electric Line is created, LENGTHUSER is automatically defaulted to
-SHAPE_Length so the field is populated immediately, while still allowing users to update
-the value later if needed.
+When a new ElectricLine feature (any Asset Group, any Asset Type) is created with a null
+or zero/negative LENGTHUSER, the attribute rule automatically sets LENGTHUSER to
+SHAPE_Length. If the user supplies a valid LENGTHUSER > 0 at creation, it is preserved
+unchanged. Users can still update LENGTHUSER after creation for business reasons. The
+rule does not apply during edits to existing features.
 
 ### In Scope *(mandatory)*
 
-- Defaulting LENGTHUSER from SHAPE_Length during creation of new Electric Line features.
+- Attribute rule on ElectricLine feature class (all Asset Groups, all Asset Types) that
+  sets LENGTHUSER = SHAPE_Length when LENGTHUSER is null or ≤ 0 at creation time.
+- Preservation of user-supplied LENGTHUSER > 0 at creation (rule does not fire).
+- Applies to all creation methods (interactive, batch, import).
 - Preserving user ability to update LENGTHUSER after creation.
-- GIS data completeness for the Electric Line creation workflow.
+- GIS data completeness for the ElectricLine creation workflow.
 
 ### Out of Scope *(mandatory)*
 
@@ -159,11 +182,13 @@ the value later if needed.
 
 ### Business Requirements *(mandatory)*
 
-- **BR-001**: Set User Length default value equal to SHAPE_Length when a new Electric
-  Line feature is created.
-- **BR-002**: Ensure the User Length attribute is populated so it is not null for new
-  Electric Line records.
-- **BR-003**: Preserve the user's ability to update the value afterward.
+- **BR-001**: Apply an attribute rule to ElectricLine (all Asset Groups, all Asset Types)
+  that sets LENGTHUSER = SHAPE_Length when LENGTHUSER is null or ≤ 0 at creation time.
+- **BR-002**: Preserve a user-supplied LENGTHUSER > 0 at creation; rule must not
+  overwrite it.
+- **BR-003**: Ensure LENGTHUSER is not null after creation of any new ElectricLine
+  feature.
+- **BR-004**: Preserve the user's ability to update LENGTHUSER after creation.
 
 ### Dependencies *(mandatory)*
 
@@ -180,12 +205,12 @@ the value later if needed.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Electric Line**: GIS feature created by users, containing SHAPE_Length and
-  LENGTHUSER attributes.
-- **LENGTHUSER**: User Length attribute used downstream and required to be non-null on
-  newly created Electric Line features.
-- **SHAPE_Length**: System-calculated shape length used as the default source value at
-  feature creation.
+- **ElectricLine**: GIS feature class (all Asset Groups, all Asset Types) subject to the
+  creation-time attribute rule. Contains SHAPE_Length and LENGTHUSER attributes.
+- **LENGTHUSER**: User Length attribute required to be non-null on newly created
+  ElectricLine features; downstream systems such as Oracle WACS adopt this value.
+- **SHAPE_Length**: System-calculated shape length used as the default source value when
+  LENGTHUSER is null or ≤ 0 at creation time.
 
 ## Success Criteria *(mandatory)*
 
@@ -196,40 +221,44 @@ the value later if needed.
 
 ### Measurable Outcomes
 
-- **SC-001**: In 100% of tested new Electric Line creation cases, LENGTHUSER is
-  populated when the record is saved.
-- **SC-002**: In 100% of tested new Electric Line creation cases, the initial
-  LENGTHUSER value matches SHAPE_Length at the time of creation.
-- **SC-003**: In 100% of tested post-creation edits, a user-updated LENGTHUSER value is
-  retained.
-- **SC-004**: Manual correction of missing LENGTHUSER values for newly created Electric
-  Line features is reduced by at least 90% compared with the current workflow.
+- **SC-001**: In 100% of tested new ElectricLine creation cases where no LENGTHUSER is
+  supplied (or LENGTHUSER is null or ≤ 0), LENGTHUSER is populated with SHAPE_Length
+  when the record is saved.
+- **SC-002**: In 100% of tested new ElectricLine creation cases where LENGTHUSER > 0 is
+  supplied by the user, the user-supplied value is preserved unchanged.
+- **SC-003**: In 100% of tested new ElectricLine creation cases across all Asset Groups
+  and Asset Types, LENGTHUSER is non-null after save.
+- **SC-004**: In 100% of tested post-creation edits, a user-updated LENGTHUSER value is
+  retained without being reset.
+- **SC-005**: Manual correction of missing LENGTHUSER values for newly created
+  ElectricLine features is reduced by at least 90% compared with the current workflow.
 
 ## Assumptions
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
-
-- SHAPE_Length is available and system-calculated during new Electric Line feature
-  creation.
-- Users may legitimately adjust LENGTHUSER after creation for business reasons.
-- Existing permissions for creating and editing Electric Line features remain unchanged.
+- SHAPE_Length is available and system-calculated during new ElectricLine feature
+  creation before the attribute rule fires.
+- A LENGTHUSER value of 0 or negative is treated equivalently to null for the purpose of
+  the defaulting rule.
+- Users may legitimately adjust LENGTHUSER after creation for business reasons; the rule
+  does not re-fire on subsequent edits.
+- Existing permissions for creating and editing ElectricLine features remain unchanged.
 - Oracle WACS consumes User Length as a downstream dependency and does not require scope
   expansion in this enhancement.
+- Updating LENGTHUSER on existing ElectricLine records is explicitly out of scope.
 
 ## Delivery Layer Mapping *(mandatory)*
 
 Document each major item with an explicit layer label so reviewers can separate intent,
 design, build work, and verification:
 
-- **Business Requirement**: New Electric Line features must default LENGTHUSER to
-  SHAPE_Length so the field is populated and not null.
-- **Technical Design**: Apply a creation-time defaulting rule for Electric Line that
-  copies SHAPE_Length into LENGTHUSER while allowing later user updates.
-- **Implementation Task**: Add the Electric Line creation rule and verify it does not
-  overwrite user changes after creation.
-- **Test Consideration**: Validate new feature creation, null prevention, later user
-  updates, and non-regression of the existing GIS edit flow.
+- **Business Requirement**: New ElectricLine features (all Asset Groups, all Asset Types)
+  must have LENGTHUSER populated as non-null; if not supplied or invalid at creation, it
+  must default to SHAPE_Length; user-supplied values > 0 must be preserved.
+- **Technical Design**: Attribute rule on ElectricLine creation: if LENGTHUSER is null
+  or ≤ 0, set LENGTHUSER = SHAPE_Length; otherwise preserve existing value. Rule does
+  not fire on edits.
+- **Implementation Task**: Add ElectricLine creation attribute rule with conditional
+  logic; verify it does not fire on edits or overwrite valid user-supplied values.
+- **Test Consideration**: Validate null/zero defaulting, valid user-value preservation,
+  no-edit-trigger behavior, all Asset Groups/Types coverage, batch/import path coverage,
+  and non-regression of existing GIS edit flow.

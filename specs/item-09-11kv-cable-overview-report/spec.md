@@ -20,19 +20,6 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
-
 ### User Story 1 - Generate Monthly 11kV In-Service Cable CSV Export (Priority: P1)
 
 As a GIS reporting user, I generate a monthly CSV report export by month end, covering
@@ -109,6 +96,24 @@ verify key fields and links align.
   are included; OHL elements are excluded.
 - A circuit is not a closed ring — explicit scope constraint; behavior must be defined
   before Detailed Design.
+
+### Error Handling
+
+- **EH-001**: If a cable section row has one or more required fields missing from GIS
+  source (length, material, cable size, insulation, commissioning data, connected
+  substation), the row is flagged in the CSV output with the missing field identified;
+  the row is not silently dropped.
+- **EH-002**: If a joint location record has missing latitude, longitude, or commissioning
+  data, the joint row is flagged in the CSV output with the missing field identified; the
+  row is not silently dropped.
+- **EH-003**: If a Device feature has SOM_SS and SOM_CCT but is not contained by a
+  Substation, it is excluded from trace start points; the report does not error and
+  continues processing remaining valid Device features.
+- **EH-004**: If duplicate cable identifiers appear in source GIS records, duplicates are
+  flagged in the CSV output; duplicate rows are not merged silently.
+- **EH-005**: If a circuit identified during tracing is not a closed ring, the circuit is
+  excluded from the export and logged for review; behavior is confirmed during Detailed
+  Design.
 
 ## Requirements *(mandatory)*
 

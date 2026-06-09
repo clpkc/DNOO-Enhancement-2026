@@ -32,4 +32,7 @@
 ## Notes
 
 - All checklist items pass for this specification.
-- Interface update sequencing across CCMS, CCS, FSS, and OFS remains a non-blocking open question unless governance requires strict ordering.
+- Updated 2026-06-09 from design extract: trigger broadened to create/update/delete;
+  specific interface/function names added; SPSID clarified as free text attribute;
+  SUPPLY_POINT clarified as separate reference attribute; Create Missing Associations
+  cascade logic added; open question on sequencing resolved (no strict ordering required).

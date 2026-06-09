@@ -8,6 +8,15 @@
 
 **Input**: User description: "Create a specification for one DNOO GIS enhancement item only. Requirement ID: 12 - Meter SPSID attribute automatic population. Business requirement: Update multiple integration interfaces: CCMS, CCS, FSS, OFS. When a supply point is updated on a meter, the SPSID attribute should also be automatically populated. Remove the outdated SUPPLY_POINT relation. Business purpose: Ensure the meter is correctly connected to the new supply point through both utility network connectivity and SPSID attribute. Please produce: business problem, current pain point, target users / impacted systems, desired future behaviour, in-scope / out-of-scope, assumptions, dependencies, constraints, acceptance criteria, interface / data consistency expectations, edge cases / open questions. Scope notes: GIS only. Do not introduce ADMS scope unless it is an explicitly stated dependency. Keep integration and data consistency requirements explicit. Keep the wording aligned with the business requirement above."
 
+## Clarifications
+
+### Session 2026-06-09
+
+- Q: What events trigger SPSID population? → A: Supply point association create, update, and delete — not update only.
+- Q: What are the specific interfaces and functions in scope? → A: GIS_CCMS_INTF_001 (CreateUsagePoints), GIS_CCMS_INTF_003 (UpdateUsagePoints), CreateMissingAssociations, Enlight GIS CCS 1, Enlight CreateMissingAssociations, CCMS custom task, GIS_FSS_INTF_001 (Associate Supply Point and Premise), GIS OFS 2.
+- Q: What are the two SPSID-related attributes on the Meter? → A: SPSID (free text Supply Point Number, currently not populated) and SUPPLY_POINT (reference attribute, outdated, different from the association used by integrations).
+- Q: Is interface update sequencing required across all interfaces? → A: No strict sequencing; each interface/function handles its own SPSID population as part of its own supply point association lifecycle.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -23,43 +32,54 @@
   - Demonstrated to users independently
 -->
 
-### User Story 1 - Auto-Populate SPSID on Meter Supply Point Update (Priority: P1)
+### User Story 1 - Auto-Populate SPSID on Supply Point Association Create, Update, or Delete (Priority: P1)
 
-As a GIS user updating meter supply points, I need SPSID to be automatically populated
-when the meter supply point changes so meter connectivity data remains complete.
+As a GIS user managing meter supply point associations, I need SPSID (free text Supply
+Point Number) to be automatically populated when the meter's supply point association
+is created, updated, or deleted so meter connectivity data remains complete.
 
-**Why this priority**: This is the core business requirement and prevents incomplete
-meter-to-supply-point mapping.
+**Why this priority**: This is the core business requirement across all three lifecycle
+events and prevents the SPSID free text attribute from remaining unpopulated.
 
-**Independent Test**: Update a meter's supply point and verify SPSID is automatically
-updated in the same operation.
+**Independent Test**: Create, update, and delete a meter's supply point association and
+verify SPSID is automatically set (or cleared on delete) in each case.
 
 **Acceptance Scenarios**:
 
-1. **Given** a meter with an existing supply point association, **When** the user
-  updates the supply point, **Then** SPSID is automatically populated to the matching
-  new supply point identifier.
-2. **Given** a successful supply point update, **When** the meter record is reviewed,
-  **Then** utility network connectivity and SPSID reflect the same supply point.
+1. **Given** a meter with a supply point association, **When** the association is created
+   or updated to a new supply point, **Then** SPSID is automatically populated with the
+   SPSID of the associated Supply Point.
+2. **Given** a meter with a supply point association, **When** the association is deleted,
+   **Then** SPSID on the meter is updated accordingly.
+3. **Given** a successful supply point association event, **When** the meter record is
+   reviewed, **Then** utility network connectivity and SPSID reflect the same supply
+   point.
 
 ---
 
-### User Story 2 - Keep Integration Interfaces Consistent (Priority: P2)
+### User Story 2 - Keep Named Integration Interfaces Consistent (Priority: P2)
 
-As an integration stakeholder, I need CCMS, CCS, FSS, and OFS interfaces to receive
-consistent SPSID-aligned meter updates.
+As an integration stakeholder, I need the named CCMS, CCS, FSS, and OFS interfaces and
+functions to receive consistent SPSID-aligned meter updates for all supply point
+association lifecycle events.
 
-**Why this priority**: Interface consistency is required to avoid mismatched downstream
-meter/supply-point states.
+**Why this priority**: Interface consistency across all named functions is required to
+avoid mismatched downstream meter/supply-point states.
 
-**Independent Test**: Perform meter supply point updates and verify each listed
-integration interface receives consistent SPSID data.
+**Independent Test**: Perform supply point association create, update, and delete events
+and verify each named interface (GIS_CCMS_INTF_001, GIS_CCMS_INTF_003,
+CreateMissingAssociations, Enlight GIS CCS 1, Enlight CreateMissingAssociations, CCMS
+custom task, GIS_FSS_INTF_001, GIS OFS 2) receives consistent SPSID-aligned data.
 
 **Acceptance Scenarios**:
 
-1. **Given** a meter supply point update is completed, **When** data is transmitted to
-  CCMS, CCS, FSS, and OFS, **Then** each interface reflects the updated SPSID and
-  aligned meter connectivity state.
+1. **Given** a supply point association lifecycle event (create, update, or delete),
+   **When** data is transmitted through the named interfaces and functions, **Then** each
+   reflects the updated SPSID and aligned meter connectivity state.
+2. **Given** a Premise has an association to a Supply Point (Create Missing Associations
+   logic), **When** processed, **Then** the association is created for all meters at that
+   Premise, conflicting Supply Point associations are deleted, and SPSID is populated on
+   each meter from the associated Supply Point's SPSID.
 
 ---
 
@@ -83,65 +103,89 @@ utility network connectivity without requiring SUPPLY_POINT relation.
 
 ### Edge Cases
 
-- Meter supply point is updated to a value with no valid SPSID mapping.
-- Existing meter has stale SPSID that conflicts with current utility network
-  connectivity.
-- Interface delivery succeeds for some systems (for example CCMS, CCS) and fails for
-  others (for example FSS, OFS).
-- Multiple updates are applied to the same meter in a short interval.
-- Removal of SUPPLY_POINT relation affects legacy reporting references.
-- Open question: Is there a required sequencing rule for interface updates across CCMS,
-  CCS, FSS, and OFS, or is eventual consistency across all interfaces acceptable?
+- Meter supply point association is deleted with no new association: SPSID on the meter
+  must be updated accordingly (not left with a stale value).
+- Meter supply point association is created or updated to a supply point with no valid
+  SPSID value: the outcome must be flagged for correction.
+- Existing meter has stale SPSID that conflicts with current utility network connectivity.
+- Create Missing Associations runs against a Premise where some meters already have a
+  conflicting Supply Point association: conflicting associations must be deleted before
+  SPSID is populated.
+- Multiple association lifecycle events are applied to the same meter in a short interval.
+- Removal of SUPPLY_POINT relation attribute affects legacy reporting references outside
+  this workflow.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST automatically populate SPSID when a meter supply point is
-  updated.
-- **FR-002**: System MUST ensure populated SPSID corresponds to the new supply point
+- **FR-001**: System MUST automatically populate SPSID (free text Supply Point Number)
+  on the Meter when the supply point association is created, updated, or deleted.
+- **FR-002**: System MUST populate SPSID with the SPSID value from the associated Supply
+  Point when an association is created or updated.
+- **FR-003**: System MUST update SPSID accordingly when a supply point association is
+  deleted; the attribute must not retain a stale value.
+- **FR-004**: System MUST ensure populated SPSID corresponds to the new supply point
   connection in utility network connectivity.
-- **FR-003**: System MUST update integration interfaces CCMS, CCS, FSS, and OFS with the
-  updated meter and SPSID state.
-- **FR-004**: System MUST remove dependency on the outdated SUPPLY_POINT relation for
-  this workflow.
-- **FR-005**: System MUST reject or flag updates where supply point to SPSID mapping is
-  invalid or unavailable.
-- **FR-006**: System MUST preserve consistent meter-to-supply-point representation across
+- **FR-005**: System MUST update the following interfaces and functions with the updated
+  meter and SPSID state: GIS_CCMS_INTF_001 (CreateUsagePoints),
+  GIS_CCMS_INTF_003 (UpdateUsagePoints), CreateMissingAssociations,
+  Enlight GIS CCS 1, Enlight CreateMissingAssociations, CCMS custom task,
+  GIS_FSS_INTF_001 (Associate Supply Point and Premise), GIS OFS 2.
+- **FR-006**: System MUST implement Create Missing Associations logic: when a Premise has
+  an association to a Supply Point, create the association for all meters at that Premise;
+  delete any conflicting Supply Point associations on those meters; and populate SPSID
+  on each meter from the associated Supply Point's SPSID.
+- **FR-007**: System MUST remove the SUPPLY_POINT relation attribute dependency for this
+  workflow; SUPPLY_POINT is considered outdated and differs from the integration
+  association.
+- **FR-008**: System MUST flag or reject updates where the supply point to SPSID mapping
+  is invalid or unavailable.
+- **FR-009**: System MUST preserve consistent meter-to-supply-point representation across
   utility network connectivity and SPSID attribute.
-- **FR-007**: System MUST keep scope limited to GIS integration/data consistency and
+- **FR-010**: System MUST keep scope limited to GIS integration/data consistency and
   MUST NOT introduce ADMS workflow or design scope.
-- **FR-008**: System MUST keep unrelated GIS workflows unchanged.
+- **FR-011**: System MUST keep unrelated GIS workflows unchanged.
 
 ### Business Problem *(mandatory)*
 
-When meter supply points are updated, SPSID is not reliably populated in the same
-workflow, causing inconsistent representation of meter connectivity across GIS and
-integration interfaces.
+When supply point associations are created, updated, or deleted on a meter, SPSID (free
+text Supply Point Number) is not reliably populated in the same workflow, causing
+inconsistent representation of meter connectivity across GIS and integration interfaces.
+The SUPPLY_POINT relation attribute is outdated and differs from the association used by
+integrations, adding further confusion.
 
 ### Current Pain Point *(mandatory)*
 
-Users and downstream systems encounter mismatches between utility network connectivity
-and SPSID attribute values, and legacy SUPPLY_POINT relation usage adds confusion.
+SPSID (free text Supply Point Number) on the Meter is not populated, causing mismatches
+between utility network connectivity and SPSID attribute values. The SUPPLY_POINT
+relation attribute (a separate reference, different from the integration association)
+adds legacy confusion that must be retired.
 
 ### Target Users / Impacted Systems *(mandatory)*
 
-- GIS users updating meter supply point relationships.
+- GIS users managing meter supply point associations (create, update, delete).
 - GIS data owners responsible for connectivity integrity.
-- Impacted interfaces: CCMS, CCS, FSS, OFS.
+- Impacted interfaces and functions: GIS_CCMS_INTF_001, GIS_CCMS_INTF_003,
+  CreateMissingAssociations, Enlight GIS CCS 1, Enlight CreateMissingAssociations,
+  CCMS custom task, GIS_FSS_INTF_001, GIS OFS 2.
 
 ### Desired Future Behaviour *(mandatory)*
 
-Any meter supply point update automatically sets SPSID to the matching new supply point,
-and all listed interfaces receive consistent data while outdated SUPPLY_POINT relation is
-retired for this workflow.
+Any supply point association create, update, or delete on a Meter automatically sets
+SPSID (free text Supply Point Number) to the matching supply point value. All named
+interfaces and functions receive consistent data. The outdated SUPPLY_POINT relation
+attribute is retired from this workflow.
 
 ### In Scope *(mandatory)*
 
-- Automatic SPSID population during meter supply point updates.
+- Automatic SPSID (free text Supply Point Number) population during supply point
+  association create, update, and delete on the Meter.
 - Consistency alignment between utility network connectivity and SPSID attribute.
-- Integration updates for CCMS, CCS, FSS, OFS.
-- Removal of outdated SUPPLY_POINT relation dependency for this workflow.
+- Updates to: GIS_CCMS_INTF_001, GIS_CCMS_INTF_003, CreateMissingAssociations,
+  Enlight GIS CCS 1, Enlight CreateMissingAssociations, CCMS custom task,
+  GIS_FSS_INTF_001, GIS OFS 2.
+- Removal of SUPPLY_POINT relation attribute dependency for this workflow.
 
 ### Out of Scope *(mandatory)*
 
@@ -151,19 +195,26 @@ retired for this workflow.
 
 ### Business Requirements *(mandatory)*
 
-- **BR-001**: When a supply point is updated on a meter, SPSID is automatically
-  populated.
-- **BR-002**: Update integration interfaces CCMS, CCS, FSS, and OFS for consistent
-  downstream data.
-- **BR-003**: Remove the outdated SUPPLY_POINT relation for this workflow.
-- **BR-004**: Ensure the meter is correctly connected to the new supply point through
-  both utility network connectivity and SPSID attribute.
+- **BR-001**: When the supply point association on a meter is created, updated, or
+  deleted, SPSID (free text Supply Point Number) is automatically populated accordingly.
+- **BR-002**: Update the named interfaces and functions (GIS_CCMS_INTF_001,
+  GIS_CCMS_INTF_003, CreateMissingAssociations, Enlight GIS CCS 1, Enlight
+  CreateMissingAssociations, CCMS custom task, GIS_FSS_INTF_001, GIS OFS 2) for
+  consistent downstream data.
+- **BR-003**: Remove the SUPPLY_POINT relation attribute for this workflow; it is
+  outdated and different from the association used by integrations.
+- **BR-004**: Ensure the meter is correctly connected to the supply point through both
+  utility network connectivity and SPSID attribute.
 
 ### Dependencies *(mandatory)*
 
-- **DEP-001**: Reliable supply point to SPSID mapping source within GIS scope.
+- **DEP-001**: Reliable supply point to SPSID mapping source within GIS scope;
+  SPSID must be available on the Supply Point for population onto the Meter.
 - **DEP-002**: Utility network connectivity model for meter-to-supply-point linkage.
-- **DEP-003**: Interface integration channels for CCMS, CCS, FSS, OFS.
+- **DEP-003**: Integration channels available for all named interfaces and functions:
+  GIS_CCMS_INTF_001, GIS_CCMS_INTF_003, CreateMissingAssociations,
+  Enlight GIS CCS 1, Enlight CreateMissingAssociations, CCMS custom task,
+  GIS_FSS_INTF_001, GIS OFS 2.
 
 ### Constraints *(mandatory)*
 
@@ -174,54 +225,80 @@ retired for this workflow.
 
 ### Interface / Data Consistency Expectations *(mandatory)*
 
-- **IC-001**: After meter supply point update, SPSID value must represent the same
-  supply point as utility network connectivity.
-- **IC-002**: CCMS, CCS, FSS, and OFS must receive consistent meter supply point and
-  SPSID values for the same update event.
-- **IC-003**: If any interface cannot receive an update, the inconsistency must be
+- **IC-001**: After any supply point association create, update, or delete on a Meter,
+  SPSID must represent the same supply point as utility network connectivity (or be
+  cleared on delete).
+- **IC-002**: All named interfaces and functions must receive consistent Meter supply
+  point and SPSID values for the same association lifecycle event.
+- **IC-003**: Create Missing Associations logic: when a Premise is associated to a
+  Supply Point, all meters at that Premise must have the association created, any
+  conflicting Supply Point associations deleted, and SPSID populated from the Supply
+  Point's SPSID.
+- **IC-004**: If any interface cannot receive an update, the inconsistency must be
   detectable and flagged for correction.
-- **IC-004**: SUPPLY_POINT relation must no longer be used as authoritative source for
-  this workflow.
+- **IC-005**: SUPPLY_POINT relation attribute must no longer be used as authoritative
+  source for this workflow; it is separate from and different to the integration
+  association.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Meter Record**: GIS meter entity with supply point connectivity and SPSID attribute.
-- **Supply Point Mapping**: Authoritative relationship that determines valid SPSID for a
-  given supply point update.
-- **Integration Update Event**: Outbound data update propagated to CCMS, CCS, FSS, OFS
-  for consistency.
+- **Meter (Electric Junction Object)**: GIS meter entity with supply point connectivity,
+  SPSID attribute (free text Supply Point Number, currently not populated), and
+  SUPPLY_POINT relation attribute (outdated, to be retired from this workflow).
+- **Supply Point**: Source of the SPSID value used to populate the Meter's SPSID
+  attribute.
+- **Supply Point Association**: The integration association (create/update/delete) that
+  triggers SPSID population; distinct from the outdated SUPPLY_POINT relation attribute.
+- **Premise**: Spatial or logical grouping; when associated to a Supply Point, triggers
+  Create Missing Associations logic for all meters at that Premise.
+- **Integration Update Event**: Outbound data update propagated to named interfaces and
+  functions for consistency.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: In 100% of tested meter supply point update cases with valid mapping,
-  SPSID is automatically populated.
-- **SC-002**: In 100% of tested successful updates, utility network connectivity and
-  SPSID represent the same new supply point.
-- **SC-003**: In at least 95% of tested integration update events, CCMS, CCS, FSS, and
-  OFS receive consistent SPSID-aligned data without manual reconciliation.
-- **SC-004**: Manual correction effort for meter supply point and SPSID inconsistencies
+- **SC-001**: In 100% of tested supply point association create and update cases with
+  valid SPSID mapping, SPSID is automatically populated on the Meter.
+- **SC-002**: In 100% of tested supply point association delete cases, SPSID on the
+  Meter is updated accordingly and no stale value remains.
+- **SC-003**: In 100% of tested successful events, utility network connectivity and
+  SPSID represent the same supply point.
+- **SC-004**: In at least 95% of tested integration events, all named interfaces and
+  functions receive consistent SPSID-aligned data without manual reconciliation.
+- **SC-005**: Manual correction effort for Meter supply point and SPSID inconsistencies
   is reduced by at least 80% compared with the current workflow.
 
 ## Assumptions
 
-- GIS has access to current supply point mapping required for SPSID population.
-- Interfaces CCMS, CCS, FSS, and OFS continue to consume GIS integration updates.
-- Users performing meter supply point updates already have required GIS access rights.
-- SUPPLY_POINT relation removal applies to this workflow only and does not block
-  unrelated historical access requirements.
+- GIS has access to the Supply Point's SPSID value at association create/update/delete
+  time for automatic population onto the Meter.
+- The named interfaces and functions continue to consume GIS integration events for all
+  three supply point association lifecycle events.
+- Users performing supply point association changes already have required GIS access
+  rights.
+- SUPPLY_POINT relation attribute removal applies to this workflow only and does not
+  block unrelated historical access requirements.
+- No strict sequencing is required across the named interfaces; each handles its own
+  SPSID population as part of its supply point association lifecycle.
 
 ## Delivery Layer Mapping *(mandatory)*
 
 Document each major item with an explicit layer label so reviewers can separate intent,
 design, build work, and verification:
 
-- **Business Requirement**: Meter must connect correctly to updated supply point through
-  utility network connectivity and SPSID attribute.
-- **Technical Design**: Populate SPSID automatically on supply point update and propagate
-  aligned data through CCMS, CCS, FSS, and OFS.
-- **Implementation Task**: Implement update behavior, retire outdated SUPPLY_POINT
-  relation dependency, and add integration consistency checks.
-- **Test Consideration**: Verify mapping validity handling, cross-interface consistency,
+- **Business Requirement**: Meter must reflect supply point changes through automatic
+  SPSID population for all association lifecycle events (create, update, delete); the
+  SUPPLY_POINT relation attribute is retired from this workflow.
+- **Technical Design**: On supply point association create/update, populate SPSID on the
+  Meter from the Supply Point's SPSID; on delete, update SPSID accordingly. Apply Create
+  Missing Associations logic for Premise-level cascades. Retire SUPPLY_POINT relation
+  attribute. Propagate consistently through all named interfaces and functions.
+- **Implementation Task**: Implement SPSID population for all three lifecycle events
+  across GIS_CCMS_INTF_001, GIS_CCMS_INTF_003, CreateMissingAssociations, Enlight GIS
+  CCS 1, Enlight CreateMissingAssociations, CCMS custom task, GIS_FSS_INTF_001, and
+  GIS OFS 2; retire SUPPLY_POINT relation attribute dependency.
+- **Test Consideration**: Verify SPSID population for create/update/delete events,
+  delete-then-clear behavior, Create Missing Associations cascade logic (including
+  conflicting association removal), cross-interface consistency for all named functions,
   and non-regression of unrelated GIS workflows.

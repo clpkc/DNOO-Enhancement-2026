@@ -16,21 +16,9 @@
 - Q: How are poles identified from the line event? → A: Via containment association; poles are StructureJunction features (Asset Group 90, Asset Types 731 HV Pole / 732 LV Pole). Start/end point lookup is not used.
 - Q: Which lifecycle status values on associated elements block pole decommission? → A: GIS_Status / LifecycleStatus = In Service OR Planned Uninstalled.
 - Q: How is the lifecycle update posted? → A: Via ESRI versioning; not through the GDBM Queue.
+- Q: When concurrent decommission events arrive for multiple ElectricLine features sharing the same StructureJunction pole, what is the expected evaluation behavior? → A: Deferred to Detailed Design (explicit open item).
 
 ## User Scenarios & Testing *(mandatory)*
-
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
 
 ### User Story 1 - Set Electric Line Status to Decommission and Evaluate Associated Poles (Priority: P1)
 
@@ -113,11 +101,29 @@ determined from available output state.
 - Pole has elements with stale or unresolved GIS_Status: fail safe — treat as blocking
   to prevent incorrect decommission.
 - Concurrent events update multiple ElectricLine features associated to the same
-  StructureJunction pole.
+  StructureJunction pole: exact evaluation behavior is deferred to Detailed Design;
+  this scenario must be explicitly addressed before implementation planning.
 - Lifecycle update is accepted in GIS via ESRI versioning but not yet consumed by one
   impacted downstream system.
 - ElectricLine asset group or asset type is an unusual or rarely tested combination:
   the update applies to all ElectricLine asset groups and asset types.
+
+### Error Handling
+
+- **EH-001**: When a StructureJunction pole cannot be resolved via containment association
+  from the incoming decommission event, the pole is NOT decommissioned and the record is
+  flagged for operational review; the event does not fail silently.
+- **EH-002**: When a pole has elements with stale or unresolved GIS_Status, those elements
+  are treated as blocking (fail-safe); the pole is not decommissioned until status is
+  resolved.
+- **EH-003**: When a pole has elements with GIS_Status = Planned Uninstalled, the pole is
+  retained (not decommissioned); Planned Uninstalled is an explicit blocking status.
+- **EH-004**: When concurrent decommission events target multiple ElectricLine features
+  sharing the same StructureJunction pole, the exact evaluation behavior is deferred to
+  Detailed Design and must be resolved before implementation planning.
+- **EH-005**: When a lifecycle update is accepted in GIS via ESRI versioning but not yet
+  consumed by one impacted downstream system, the GIS-side update is considered complete;
+  downstream consumption lag is a dependency, not a GIS failure condition.
 
 ## Requirements *(mandatory)*
 

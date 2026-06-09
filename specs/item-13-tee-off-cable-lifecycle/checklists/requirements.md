@@ -38,3 +38,7 @@
   association lookup clarified; blocking condition extended to include Planned Uninstalled;
   ESRI versioning constraint (not GDBM Queue) added; open question on association scope
   resolved.
+- Updated 2026-06-09 (clarify session): removed stale template comment from User Scenarios;
+  concurrent events edge case updated to explicitly defer to Detailed Design; EH-001–EH-005
+  added to formalise fail-safe, stale-status, Planned Uninstalled blocking, concurrent event
+  deferral, and downstream lag handling.

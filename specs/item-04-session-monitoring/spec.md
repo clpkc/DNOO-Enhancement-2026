@@ -1,6 +1,6 @@
-# Feature Specification: Session Monitoring Mechanism
+# 04 - Session Monitoring Mechanism
 
-**Feature Branch**: `005-add-session-history-tab`
+**Feature Branch**: `item-04-session-monitoring`
 
 **Created**: 2026-06-08
 

@@ -1,6 +1,6 @@
-# Feature Specification: GIS Layer Update Validation and Approval
+# Project Spec
 
-**Feature Branch**: `001-create-gis-spec`
+**Feature Branch**: `000-project-spec`
 
 **Created**: 2026-06-08
 

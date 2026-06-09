@@ -1,6 +1,6 @@
-# Feature Specification: User Length Alignment Tool
+# 02 - User Length Alignment Tool
 
-**Feature Branch**: `003-user-length-tool`
+**Feature Branch**: `item-02-user-length-alignment-tool`
 
 **Created**: 2026-06-08
 

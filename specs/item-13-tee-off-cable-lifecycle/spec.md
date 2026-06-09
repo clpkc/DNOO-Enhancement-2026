@@ -1,6 +1,6 @@
-# Feature Specification: Lifecycle Status Update for Tee-Off Cable Segment
+# 13 - Lifecycle Status Update for Tee-Off Cable Segment
 
-**Feature Branch**: `008-update-teeoff-lifecycle`
+**Feature Branch**: `item-13-tee-off-cable-lifecycle`
 
 **Created**: 2026-06-08
 

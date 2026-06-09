@@ -1,6 +1,6 @@
-# Feature Specification: 11kV Cable Overview Report Generation
+# 09 - 11kV Cable Overview Report Generation
 
-**Feature Branch**: `006-create-11kv-cable-report`
+**Feature Branch**: `item-09-11kv-cable-overview-report`
 
 **Created**: 2026-06-08
 

@@ -1,6 +1,6 @@
-# Feature Specification: Meter SPSID Attribute Automatic Population
+# 12 - Meter SPSID Attribute Automatic Population
 
-**Feature Branch**: `007-meter-spsid-population`
+**Feature Branch**: `item-12-meter-spsid-population`
 
 **Created**: 2026-06-08
 

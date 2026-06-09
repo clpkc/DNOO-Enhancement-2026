@@ -1,6 +1,6 @@
-# Feature Specification: Update Substation Task Dropdown List
+# 03 - Update Substation Task Drop Down List
 
-**Feature Branch**: `004-update-substation-dropdown`
+**Feature Branch**: `item-03-update-substation-task`
 
 **Created**: 2026-06-08
 

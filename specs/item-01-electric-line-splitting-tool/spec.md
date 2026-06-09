@@ -1,6 +1,6 @@
-# Feature Specification: Electric Line Splitting Tool
+# 01 - Electric Line Splitting Tool
 
-**Feature Branch**: `002-electric-line-split`
+**Feature Branch**: `item-01-electric-line-splitting-tool`
 
 **Created**: 2026-06-08
 

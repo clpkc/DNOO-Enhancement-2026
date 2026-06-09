@@ -16,21 +16,9 @@
 - Q: What is the asset-type-specific SSNUM source rule? → A: HV SS Transformer → containing HV Substation's SSNUM; HV PM Transformer → transformer's own SSNUM; all other types → SS_NO not populated.
 - Q: What is the null-handling rule when SSNUM is empty? → A: If SSNUM is empty in the Transformer or Structure Boundary, SS_NO in TX_LOAD_READING is null.
 - Q: Is SQL injection remediation (GIS_SPS_INTF_004) in scope for this item? → A: Deferred — flagged as out of scope for this item pending clarification; requires a separate GIS enhancement item or explicit re-scoping confirmation.
+- Q: When an HV SS Transformer is reassigned to a different HV Substation between load cycles, which SSNUM should SS_NO reflect? → A: Deferred to Detailed Design (explicit open item).
 
 ## User Scenarios & Testing *(mandatory)*
-
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
 
 ### User Story 1 - Populate SS_NO for HV SS Transformer from Containing HV Substation (Priority: P1)
 
@@ -112,7 +100,26 @@ patterns are safely handled without unsafe query execution.
 - Transformer with no resolvable containing HV Substation at processing time (HV SS
   type): SS_NO is null.
 - Search API receives encoded payloads or unusual Unicode patterns.
-- Same transformer reassigned to another HV Substation between load cycles.
+- Same transformer reassigned to another HV Substation between load cycles: exact
+  SS_NO behavior (current-state or prior-state) is deferred to Detailed Design and must
+  be resolved before implementation planning.
+
+### Error Handling
+
+- **EH-001**: When an HV SS Transformer has no resolvable containing HV Substation at
+  processing time, SS_NO in TX_LOAD_READING is null; the record is not silently skipped
+  and is available for operational review.
+- **EH-002**: When the applicable SSNUM source (HV Substation or transformer) is null or
+  empty, SS_NO in TX_LOAD_READING is written as null; no partial or placeholder value is
+  used.
+- **EH-003**: When a Transformer asset type is neither HV SS nor HV PM, SS_NO is not
+  populated in TX_LOAD_READING; no default or fallback SSNUM is substituted.
+- **EH-004**: When an HV SS Transformer is reassigned to a different HV Substation
+  between load cycles, the SS_NO behavior is deferred to Detailed Design; this scenario
+  must be explicitly addressed before implementation planning.
+- **EH-005**: *(Deferred)* When a search input to GIS_SPS_INTF_004 is malformed or
+  contains suspicious patterns, safe handling behavior is deferred pending scope
+  confirmation for SQL injection remediation.
 
 ## Requirements *(mandatory)*
 

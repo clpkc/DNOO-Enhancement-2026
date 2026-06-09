@@ -37,3 +37,7 @@
 - SQL injection remediation (GIS_SPS_INTF_004) is explicitly deferred pending scope
   confirmation; flagged with *(Deferred)* markers throughout the spec. Requires a
   separate GIS enhancement item or explicit re-scoping approval before planning.
+- Updated 2026-06-09 (clarify session): removed stale template comment from User
+  Scenarios; transformer reassignment edge case explicitly deferred to Detailed Design;
+  EH-001–EH-005 added to formalise null handling, unresolved substation, unsupported
+  asset types, reassignment deferral, and deferred SQL injection handling.

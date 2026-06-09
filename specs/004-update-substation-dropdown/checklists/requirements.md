@@ -32,4 +32,9 @@
 ## Notes
 
 - All checklist items pass for this specification.
-- The dropdown display formatting question is documented as a non-blocking open question rather than a planning blocker.
+- Updated 2026-06-09 from design extract: corrected table name to SAP_SUBSTATION_DATA
+  throughout; HV Switch scope narrowed to PLACEMENT = Pole-Mounted; dropdown auto-fill
+  behavior (name↔number) added; IS_USED exclusion rule added (VR-005, FR-004);
+  SSNAME "S/S" suffix rule added (VR-004); staging import dependency documented
+  (DEP-001, DEP-004, DEP-005); open question on dropdown display resolved by auto-fill
+  behavior from design extract; SC-004 and SC-005 added for IS_USED and suffix coverage.

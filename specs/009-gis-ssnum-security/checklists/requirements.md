@@ -32,4 +32,8 @@
 ## Notes
 
 - All checklist items pass for this specification.
-- Behavior for unresolved SSNUM records remains a non-blocking open question for policy confirmation.
+- The behavior for unresolved SSNUM records is now resolved (design extract 2026-06-09):
+  SS_NO in TX_LOAD_READING is null when the applicable SSNUM source is empty or null.
+- SQL injection remediation (GIS_SPS_INTF_004) is explicitly deferred pending scope
+  confirmation; flagged with *(Deferred)* markers throughout the spec. Requires a
+  separate GIS enhancement item or explicit re-scoping approval before planning.

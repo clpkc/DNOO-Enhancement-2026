@@ -33,3 +33,8 @@
 
 - All checklist items pass for this specification.
 - Scope boundary is preserved: ADMS and ERP are treated only as impacted/dependent systems.
+- Updated 2026-06-09 from design extract: ElectricLine GIS_Status Decommission step added;
+  StructureJunction model (Asset Group 90; HV Pole 731 / LV Pole 732) and containment
+  association lookup clarified; blocking condition extended to include Planned Uninstalled;
+  ESRI versioning constraint (not GDBM Queue) added; open question on association scope
+  resolved.

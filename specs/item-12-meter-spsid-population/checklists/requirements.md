@@ -36,3 +36,7 @@
   specific interface/function names added; SPSID clarified as free text attribute;
   SUPPLY_POINT clarified as separate reference attribute; Create Missing Associations
   cascade logic added; open question on sequencing resolved (no strict ordering required).
+- Updated 2026-06-09 (clarify session): SPSID on delete confirmed as cleared to null /
+  empty; removed stale template comment block from User Stories; FR-003, IC-001, SC-002,
+  User Story 1 acceptance scenario 2, and Edge Case 1 updated to use explicit null/empty
+  wording; EH-001–EH-005 added to formalise error handling.

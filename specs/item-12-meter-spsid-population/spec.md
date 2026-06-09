@@ -16,21 +16,9 @@
 - Q: What are the specific interfaces and functions in scope? → A: GIS_CCMS_INTF_001 (CreateUsagePoints), GIS_CCMS_INTF_003 (UpdateUsagePoints), CreateMissingAssociations, Enlight GIS CCS 1, Enlight CreateMissingAssociations, CCMS custom task, GIS_FSS_INTF_001 (Associate Supply Point and Premise), GIS OFS 2.
 - Q: What are the two SPSID-related attributes on the Meter? → A: SPSID (free text Supply Point Number, currently not populated) and SUPPLY_POINT (reference attribute, outdated, different from the association used by integrations).
 - Q: Is interface update sequencing required across all interfaces? → A: No strict sequencing; each interface/function handles its own SPSID population as part of its own supply point association lifecycle.
+- Q: When a supply point association is deleted with no new replacement, what value should SPSID be set to? → A: Cleared to null / empty (field blanked; must not retain a stale value).
 
 ## User Scenarios & Testing *(mandatory)*
-
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
 
 ### User Story 1 - Auto-Populate SPSID on Supply Point Association Create, Update, or Delete (Priority: P1)
 
@@ -49,8 +37,8 @@ verify SPSID is automatically set (or cleared on delete) in each case.
 1. **Given** a meter with a supply point association, **When** the association is created
    or updated to a new supply point, **Then** SPSID is automatically populated with the
    SPSID of the associated Supply Point.
-2. **Given** a meter with a supply point association, **When** the association is deleted,
-   **Then** SPSID on the meter is updated accordingly.
+2. **Given** a meter with a supply point association, **When** the association is deleted
+   with no replacement, **Then** SPSID on the meter is cleared to null / empty.
 3. **Given** a successful supply point association event, **When** the meter record is
    reviewed, **Then** utility network connectivity and SPSID reflect the same supply
    point.
@@ -104,7 +92,7 @@ utility network connectivity without requiring SUPPLY_POINT relation.
 ### Edge Cases
 
 - Meter supply point association is deleted with no new association: SPSID on the meter
-  must be updated accordingly (not left with a stale value).
+  must be cleared to null / empty; it must not retain a stale value.
 - Meter supply point association is created or updated to a supply point with no valid
   SPSID value: the outcome must be flagged for correction.
 - Existing meter has stale SPSID that conflicts with current utility network connectivity.
@@ -115,6 +103,24 @@ utility network connectivity without requiring SUPPLY_POINT relation.
 - Removal of SUPPLY_POINT relation attribute affects legacy reporting references outside
   this workflow.
 
+### Error Handling
+
+- **EH-001**: When a supply point association is deleted with no replacement, SPSID on
+  the Meter is cleared to null / empty; it is never left with the previous stale value.
+- **EH-002**: When a supply point association is created or updated but the Supply Point
+  has no valid SPSID value, the update is flagged for correction; the Meter SPSID is not
+  silently set to null or a partial value.
+- **EH-003**: When Create Missing Associations runs against a Premise where a meter
+  already has a conflicting Supply Point association, the conflicting association is
+  deleted before the new association and SPSID are populated; the meter is not left with
+  two competing associations.
+- **EH-004**: When an interface update event cannot be delivered to one or more of the
+  named interfaces, the inconsistency is flagged and detectable; silent partial-update
+  states are not permitted.
+- **EH-005**: When an existing Meter has a stale SPSID that conflicts with current
+  utility network connectivity, the inconsistency is detectable and correctable through
+  the same supply point association lifecycle workflow.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -123,8 +129,8 @@ utility network connectivity without requiring SUPPLY_POINT relation.
   on the Meter when the supply point association is created, updated, or deleted.
 - **FR-002**: System MUST populate SPSID with the SPSID value from the associated Supply
   Point when an association is created or updated.
-- **FR-003**: System MUST update SPSID accordingly when a supply point association is
-  deleted; the attribute must not retain a stale value.
+- **FR-003**: System MUST clear SPSID to null / empty when a supply point association is
+  deleted with no replacement; the attribute must not retain a stale value.
 - **FR-004**: System MUST ensure populated SPSID corresponds to the new supply point
   connection in utility network connectivity.
 - **FR-005**: System MUST update the following interfaces and functions with the updated
@@ -225,9 +231,9 @@ attribute is retired from this workflow.
 
 ### Interface / Data Consistency Expectations *(mandatory)*
 
-- **IC-001**: After any supply point association create, update, or delete on a Meter,
-  SPSID must represent the same supply point as utility network connectivity (or be
-  cleared on delete).
+- **IC-001**: After any supply point association create or update on a Meter, SPSID must
+  represent the same supply point as utility network connectivity. On association delete
+  with no replacement, SPSID must be cleared to null / empty.
 - **IC-002**: All named interfaces and functions must receive consistent Meter supply
   point and SPSID values for the same association lifecycle event.
 - **IC-003**: Create Missing Associations logic: when a Premise is associated to a
@@ -261,7 +267,7 @@ attribute is retired from this workflow.
 - **SC-001**: In 100% of tested supply point association create and update cases with
   valid SPSID mapping, SPSID is automatically populated on the Meter.
 - **SC-002**: In 100% of tested supply point association delete cases, SPSID on the
-  Meter is updated accordingly and no stale value remains.
+  Meter is cleared to null / empty and no stale value remains.
 - **SC-003**: In 100% of tested successful events, utility network connectivity and
   SPSID represent the same supply point.
 - **SC-004**: In at least 95% of tested integration events, all named interfaces and

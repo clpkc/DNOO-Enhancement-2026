@@ -18,16 +18,6 @@
 - Q: What is the UI layout? → A: Header toolbar (Sort By dropdown, Search with partial string matching and dynamic filtering); left panel (date range filter, scrollable session list); right panel top (Session ID, last updated, status); right panel lower (structured activity records with label, message, timestamp, user context).
 - Q: When is the Error Message field shown? → A: Only when status = Post Failed; it is hidden for all other status values.
 
-## Clarifications
-
-### Session 2026-06-09
-
-- Q: Is this a new tab or a new add-in? → A: New ArcGIS Pro add-in/plugin under ArcFM XI Session Manager.
-- Q: Whose sessions are shown? → A: Historical GDBM sessions associated with the authenticated user only.
-- Q: Is there a lookback window or a date range filter? → A: Date range filter (start date / end date) in the left panel; user selects the range.
-- Q: How does search work? → A: Free-text input with partial string matching and dynamic filtering — no manual refresh needed.
-- Q: Is Error Message always shown or conditionally shown? → A: Error Message field is shown only when status = Post Failed; for all other statuses it remains hidden.
-
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -240,6 +230,9 @@ message. A structured activity record area provides additional session event det
   clear message that monitoring data is currently unavailable.
 - **EH-004**: Error handling messages MUST not expose admin-only details or require admin
   tool access for interpretation.
+- **EH-005**: If the date range filter is set with an end date earlier than the start
+  date, the add-in MUST surface a clear validation message and MUST NOT display results
+  for an invalid range.
 
 ### Key Entities *(include if feature involves data)*
 

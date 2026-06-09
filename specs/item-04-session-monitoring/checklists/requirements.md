@@ -37,3 +37,10 @@
   (partial, dynamic) added; Error Message conditionally shown/hidden; activity detail
   panel (lower right) added; status definitions explicit; duplicate placeholder sections
   and ACTION REQUIRED comments removed.
+- Checklist review 2026-06-09: no issues found; spec is complete, clean, and consistent
+  with design extract and constitution (all 8 principles pass). EH-001 through EH-004
+  already present covering fail/fallback/unavailability/admin-exposure cases.
+- Checklist review 2026-06-09: removed duplicate Clarifications section (two identical
+  Session 2026-06-09 blocks merged into one); added EH-005 for invalid date range
+  (end < start) which was an edge case without a corresponding EH entry; spec verified
+  consistent with design-extract and constitution (all 8 principles pass).

@@ -39,3 +39,7 @@
   (FR-007); open question on batch creation resolved; ACTION REQUIRED placeholders
   removed from Edge Cases and Assumptions; Delivery Layer Mapping updated for conditional
   logic.
+- Checklist review 2026-06-09: removed remaining stale ACTION REQUIRED comment blocks
+  from Requirements and Success Criteria sections; added EH-001 for SHAPE_Length
+  unavailable behaviour (edge case gap resolved); spec verified consistent with
+  design-extract and constitution (all 8 principles pass).

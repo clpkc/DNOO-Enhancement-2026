@@ -114,11 +114,6 @@ verify that the resulting records always contain a non-null User Length value.
 
 ## Requirements *(mandatory)*
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
-
 ### Functional Requirements
 
 - **FR-001**: When a new ElectricLine feature is created, if LENGTHUSER is null or ≤ 0,
@@ -203,6 +198,14 @@ rule does not apply during edits to existing features.
 - **CON-003**: No ADMS scope may be introduced unless explicitly stated as a dependency.
 - **CON-004**: The enhancement must not regress current GIS creation and edit workflows.
 
+### Error Handling Expectations
+
+- **EH-001**: If SHAPE_Length is unavailable or cannot be calculated at ElectricLine
+  creation time (e.g., invalid or null geometry), the creation MUST fail safe — the
+  record MUST NOT be saved with a null LENGTHUSER. A clear error message MUST be
+  presented to the user indicating the feature cannot be saved until valid geometry is
+  supplied.
+
 ### Key Entities *(include if feature involves data)*
 
 - **ElectricLine**: GIS feature class (all Asset Groups, all Asset Types) subject to the
@@ -213,11 +216,6 @@ rule does not apply during edits to existing features.
   LENGTHUSER is null or ≤ 0 at creation time.
 
 ## Success Criteria *(mandatory)*
-
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
 
 ### Measurable Outcomes
 
